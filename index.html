@@ -498,6 +498,16 @@
   #authGate .btn { width: 100%; padding: 10px; }
   #authGate .auth-msg { font-family: var(--mono); font-size: 11px; color: var(--text-faint); margin-top: 14px; min-height: 1.4em; }
   .hidden { display: none !important; }
+
+  /* Mobile browsers auto-zoom on focus into any text input smaller than
+     16px, then require a manual zoom back out. Bumping form field text
+     to 16px on narrow screens avoids triggering that zoom in the first
+     place, without touching desktop sizing. */
+  @media (max-width: 600px) {
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+  }
 </style>
 </head>
 <body>
