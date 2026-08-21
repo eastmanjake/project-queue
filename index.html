@@ -537,8 +537,49 @@
     margin-bottom: 10px;
     text-align: center;
   }
-  #authGate .btn { width: 100%; padding: 11px; border-radius: 12px; }
+  #authGate .btn { width: 100%; padding: 11px; border-radius: 12px; margin-bottom: 8px; }
   #authGate .auth-msg { font-size: 12.5px; color: var(--text-faint); margin-top: 14px; min-height: 1.4em; }
+  #authGate .auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0 12px;
+    font-size: 11.5px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  #authGate .auth-divider::before, #authGate .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+  .account-panel {
+    background: var(--surface);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 14px;
+    margin-top: 8px;
+  }
+  .account-toggle {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-faint);
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  .account-toggle:hover { color: var(--text); }
+  .account-panel input {
+    width: 100%;
+    background: var(--fill);
+    border: none;
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: var(--font);
+    margin-bottom: 8px;
+  }
+  .account-panel .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
   .hidden { display: none !important; }
 
   /* Mobile browsers auto-zoom on focus into any text input smaller than
@@ -557,7 +598,10 @@
 <div id="authGate">
   <h1>Queue</h1>
   <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email">
-  <button class="btn primary" id="authSend">Send magic link</button>
+  <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password">
+  <button class="btn primary" id="authSignInPassword">Sign in</button>
+  <div class="auth-divider">or</div>
+  <button class="btn tinted" id="authSend">Email me a sign-in link</button>
   <div class="auth-msg" id="authMsg"></div>
 </div>
 
@@ -575,7 +619,19 @@
     </div>
     <div class="sub-row">
       <span class="count" id="headerCount">—</span>
-      <button class="signout" id="signOutBtn">Sign out</button>
+      <div>
+        <button class="account-toggle" id="accountToggle">Set password</button>
+        · <button class="signout" id="signOutBtn">Sign out</button>
+      </div>
+    </div>
+    <div class="account-panel hidden" id="accountPanel">
+      <input type="password" id="newPassword" placeholder="New password (min 6 characters)">
+      <input type="password" id="newPasswordConfirm" placeholder="Confirm password">
+      <div class="form-actions">
+        <button class="btn tinted" id="cancelSetPassword">Cancel</button>
+        <button class="btn primary" id="saveSetPassword">Save password</button>
+      </div>
+      <div class="auth-msg" id="accountMsg"></div>
     </div>
   </header>
 
@@ -1437,6 +1493,16 @@ async function addParkIdea() {
 
 /* ---- Auth ---- */
 
+document.getElementById('authSignInPassword').addEventListener('click', async () => {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const msg = document.getElementById('authMsg');
+  if (!email || !password) { msg.textContent = 'enter your email and password.'; return; }
+  msg.textContent = 'signing in...';
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  msg.textContent = error ? `error: ${error.message}` : '';
+});
+
 document.getElementById('authSend').addEventListener('click', async () => {
   const email = document.getElementById('authEmail').value.trim();
   const msg = document.getElementById('authMsg');
@@ -1451,6 +1517,34 @@ document.getElementById('authSend').addEventListener('click', async () => {
 
 document.getElementById('signOutBtn').addEventListener('click', async () => {
   await supabaseClient.auth.signOut();
+});
+
+/* ---- Set / change password (requires an active session) ---- */
+
+document.getElementById('accountToggle').addEventListener('click', () => {
+  document.getElementById('accountPanel').classList.toggle('hidden');
+});
+document.getElementById('cancelSetPassword').addEventListener('click', () => {
+  document.getElementById('accountPanel').classList.add('hidden');
+  document.getElementById('newPassword').value = '';
+  document.getElementById('newPasswordConfirm').value = '';
+  document.getElementById('accountMsg').textContent = '';
+});
+document.getElementById('saveSetPassword').addEventListener('click', async () => {
+  const pw = document.getElementById('newPassword').value;
+  const confirm = document.getElementById('newPasswordConfirm').value;
+  const msg = document.getElementById('accountMsg');
+  if (pw.length < 6) { msg.textContent = 'password must be at least 6 characters.'; return; }
+  if (pw !== confirm) { msg.textContent = "passwords don't match."; return; }
+  msg.textContent = 'saving...';
+  const { error } = await supabaseClient.auth.updateUser({ password: pw });
+  if (error) {
+    msg.textContent = `error: ${error.message}`;
+  } else {
+    msg.textContent = 'password set — you can sign in with it next time.';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('newPasswordConfirm').value = '';
+  }
 });
 
 async function showApp() {
