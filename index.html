@@ -591,6 +591,42 @@
       font-size: 16px !important;
     }
   }
+
+  /* ---- Desktop layout ----
+     Mobile stays exactly as above (single column, segmented control on
+     top). At wider viewports the segmented control becomes a sidebar
+     nav and content sits beside it, so the app uses the screen instead
+     of sitting in a narrow centered column. */
+  @media (min-width: 900px) {
+    #app {
+      max-width: 1080px;
+      padding: 32px 40px 80px;
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      grid-template-areas: "header header" "tabs content";
+      column-gap: 48px;
+    }
+    header { grid-area: header; margin-bottom: 32px; }
+    .tabs {
+      grid-area: tabs;
+      flex-direction: column;
+      background: transparent;
+      padding: 0;
+      gap: 2px;
+      align-self: start;
+      position: sticky;
+      top: 32px;
+    }
+    .tab {
+      flex: none;
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 14.5px;
+    }
+    .tab.active { box-shadow: none; }
+    .view { grid-area: content; max-width: 640px; }
+    .status-msg { grid-column: 2; text-align: left; }
+  }
 </style>
 </head>
 <body>
